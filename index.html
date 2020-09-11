@@ -1,0 +1,137 @@
+<html>
+
+<head>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+
+        #pane {
+            position: absolute;
+            right: 0;
+            height: 100%;
+            width: 15%;
+            background-color: white;
+            box-shadow: 5px 0px 20px black;
+        }
+
+        .input_wrapper {
+            padding-left  : 10;
+            padding-right : 10;
+            margin-top    : 10;
+
+            display         : flex;
+            align-items     : center;
+            justify-content : space-between;
+        }
+    </style>
+    <script src="util.js"></script>
+    <script src="p5.min.js"></script>
+    <script src="sketch.js"></script>
+</head>
+
+<body>
+    <div id="pane">
+        <div class= "input_wrapper">
+            <b><label style="padding-right: 5">N</label></b>
+            <input type="number" style="padding: 2" min="1" id="n_ip" />
+        </div>
+        <div class="input_wrapper">
+            <b><label style="padding-right: 5">R</label></b>
+            <input type="number" style="padding: 2" min="1" id="r_ip" />
+        </div>
+        <br>
+        <div class="input_wrapper">
+            <b><label style="padding-right: 5">Battery Life</label></b>
+        </div>
+        <div class="input_wrapper">
+            <label style="padding-right: 5">min</label>
+            <input type="number" style="padding: 2" min="0" id="battery_min_ip" />
+        </div>
+        <div class="input_wrapper">
+            <label style="padding-right: 5">max</label>
+            <input type="number" style="padding: 2" min="1" id="battery_max_ip" />
+        </div>
+
+        <br>
+        <div class="input_wrapper">
+            <b><label style="padding-right: 5">Target Area Bounds</label></b>
+        </div>
+        <div class="input_wrapper">
+            <label style="padding-right: 5; padding-left: 10">top-left</label>
+        </div>
+        <div class="input_wrapper">
+            <label style="padding-right: 5; padding-left: 20">x</label>
+            <input type="number" style="padding: 2" min="0" id="topleft_x_ip" />
+        </div>
+        <div class="input_wrapper">
+            <label style="padding-right: 5; padding-left: 20">y</label>
+            <input type="number" style="padding: 2" min="0" id="topleft_y_ip" />
+        </div>
+        
+        <div class="input_wrapper">
+            <label style="padding-right: 5; padding-left: 10">bottom-right</label>
+        </div>
+        <div class="input_wrapper">
+            <label style="padding-right: 5; padding-left: 20">x</label>
+            <input type="number" style="padding: 2" min="0" id="bottomright_x_ip" />
+        </div>
+        <div class="input_wrapper">
+            <label style="padding-right: 5; padding-left: 20">y</label>
+            <input type="number" style="padding: 2" min="0" id="bottomright_y_ip" />
+        </div>
+
+        <br><br>
+        <div class="input_wrapper">
+            <button onclick="generateRandomSensors(); paint();" style="padding: 2">Randomize</button>
+        </div>
+    </div>
+    <script>
+        n_ip.value = N
+        r_ip.value = R
+
+        battery_min_ip.value = BATTERY_LIFE.min
+        battery_max_ip.value = BATTERY_LIFE.max
+
+        topleft_x_ip.value = BOUNDS.topLeft.x
+        topleft_y_ip.value = BOUNDS.topLeft.y
+        
+        bottomright_x_ip.value = BOUNDS.bottomRight.x
+        bottomright_y_ip.value = BOUNDS.bottomRight.y
+
+        n_ip.addEventListener("change", function(){
+            N = parseInt(n_ip.value)
+        })
+        r_ip.addEventListener("change", function(){
+            R = parseInt(r_ip.value)
+        })
+        
+        battery_min_ip.addEventListener("change", function(){
+            BATTERY_LIFE.min = parseInt(battery_min_ip.value)
+        })
+        battery_max_ip.addEventListener("change", function(){
+            BATTERY_LIFE.max = parseInt(battery_max_ip.value)
+        })
+        
+        
+        topleft_x_ip.addEventListener("change", function(){
+            BOUNDS.topLeft.x = parseInt(topleft_x_ip.value)
+        })
+        topleft_y_ip.addEventListener("change", function(){
+            BOUNDS.topLeft.y = parseInt(topleft_y_ip.value)
+        })
+        
+        bottomright_x_ip.addEventListener("change", function(){
+            BOUNDS.bottomRight.x = parseInt(bottomright_x_ip.value)
+        })
+        bottomright_y_ip.addEventListener("change", function(){
+            BOUNDS.bottomRight.y = parseInt(bottomright_y_ip.value)
+        })
+
+    </script>
+</body>
+
+</html>
+
