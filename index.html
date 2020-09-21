@@ -130,6 +130,10 @@
             BOUNDS.bottomRight.y = parseInt(bottomright_y_ip.value)
         })
 
+        setTimeout(()=>{
+            generateRandomSensors();
+            paint();
+        }, 0)
     </script>
 </body>
 

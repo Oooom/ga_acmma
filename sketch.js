@@ -1,4 +1,5 @@
 var sensors = []
+var lifetime_redundant_sensors = []
 
 function setup(){
     createCanvas(window.innerWidth, window.innerHeight)
