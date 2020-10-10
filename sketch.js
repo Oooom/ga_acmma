@@ -14,7 +14,21 @@ function paint(){
 
     stroke(255)
     noFill()
-    rect(BOUNDS.topLeft.x, BOUNDS.topLeft.y, BOUNDS.bottomRight.x - BOUNDS.topLeft.x, BOUNDS.bottomRight.y - BOUNDS.topLeft.y)
+
+    var width  = BOUNDS.bottomRight.x - BOUNDS.topLeft.x
+    var height = BOUNDS.bottomRight.y - BOUNDS.topLeft.y
+
+    // vertical lines
+    for(var i = 0; i <= width / GS; i++){
+        stroke(0, 0, 255)
+        line(BOUNDS.topLeft.x + GS * i, BOUNDS.topLeft.y, BOUNDS.topLeft.x + GS * i, BOUNDS.bottomRight.y)
+    }
+    
+    // horizontal lines
+    for(var i = 0; i <= height / GS; i++){
+        stroke(0, 0, 255)
+        line(BOUNDS.topLeft.x, BOUNDS.topLeft.y + GS * i, BOUNDS.bottomRight.x, BOUNDS.topLeft.y + GS * i)
+    }
 
     stroke(0)
     for (var sensor of sensors) {
