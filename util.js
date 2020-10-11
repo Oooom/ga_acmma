@@ -9,7 +9,9 @@ var R  = 20  // uniform circular sensing range in pixels : RADIUS
 
 var GS = 10  // uniform circular sensing range in pixels
 
-var GROWING_MUTATION_RATE = 0.05
+var GROWING_MUTATION_RATE  = 0.05
+var CRITICAL_MUTATION_RATE = 0.05
+var RETROGRADE_MUTATION_RATE  = 0.05
 
 var BATTERY_LIFE = {
     min: 50,
@@ -26,6 +28,8 @@ var BOUNDS = {
         y: 600
     }
 }
+
+var COVER_FIELDS = {}
 
 function createRandomSensor(){
     var sensor = {
@@ -79,7 +83,15 @@ function createRandomSensor(){
             }
 
             if(! anyone_not_in_range){
-                sensor.covers_cells.push( i * (height/GS) + j )
+                var cell_id = i * (height / GS) + j
+                sensor.covers_cells.push( cell_id )
+
+                if( COVER_FIELDS[cell_id] ){
+                    COVER_FIELDS[cell_id].push( sensors.length )
+                }else{
+                    COVER_FIELDS[cell_id] = [sensors.length]
+                }
+
             }
     
         }
@@ -181,6 +193,7 @@ function Chromosome(){
     }
 
     this.applyMutation = function(){
+
         for (var i = 0; i < this.cover_set_stats.length; i++) {
             var sensors_in_this_cover_set = this.cover_set_stats[i].cover_set
             var this_cover_set_stat       = this.cover_set_stats[i]
@@ -205,7 +218,84 @@ function Chromosome(){
                 // APPLY CRITICAL MUTATION
             }
 
-        }    
+        }
+
+        this.applyCriticalMutation()
+        this.applyRetrogradeMutation()
     }
+
+    this.getRandomIncompleteCoverSet = function(){
+        var incomplete = this.cover_set_stats.filter( (set) => set.coverage < 1 )
+        
+        return incomplete[ getRandomInt(0, incomplete.length-1) ]
+    }
+
+    this.getRandomCompleteCoverSet = function () {
+        var incomplete = this.cover_set_stats.filter((set) => set.coverage == 1)
+
+        return incomplete[getRandomInt(0, incomplete.length - 1)]
+    }
+
+    this.applyCriticalMutation = function(){
+        var r = Math.random()
+
+        if( r >= CRITICAL_MUTATION_RATE ) return
+        
+        var incomplete_set = this.getRandomIncompleteCoverSet()
+
+        var fields_covered = []
+
+        for (var sensor_ref of incomplete_set.cover_set) {
+            fields_covered.push(...sensors[sensor_ref].covers_cells)
+        }
+
+        for (var idx in SENSORS_IN_CRITICAL_FIELD) {
+
+            if (SENSORS_IN_CRITICAL_FIELD[idx].cell_id in fields_covered) {
+
+            } else {
+
+                var complete = this.getRandomCompleteCoverSet()
+
+                for (var iter of SENSORS_IN_CRITICAL_FIELD) {
+
+                    var intersect = iter.sensors.filter(value => complete.cover_set.includes(value))
+
+                    if (intersect.length > 1) {
+                        this.schedule_numbers[intersect[0]][
+                            this.schedule_numbers[intersect[0]].indexOf(this.cover_set_stats.indexOf(complete))
+                        ] = this.cover_set_stats.indexOf(incomplete_set)
+                    }
+
+                }
+
+            }
+
+        }
+    }
+
+    this.applyRetrogradeMutation = function(){
+        var r = Math.random()
+
+        if (r >= RETROGRADE_MUTATION_RATE ) return
+
+        var incomplete = this.getRandomIncompleteCoverSet()
+
+        var complete = this.getRandomCompleteCoverSet()
+
+        var diff = incomplete.cover_set.filter(value => !complete.cover_set.includes(value))
+
+        // random_incomplete_sensor_which_not_in_complete
+        var sensor = diff[ getRandomInt(0, diff.length - 1) ]
+
+        this.schedule_numbers[ sensor ][
+            this.schedule_numbers[ sensor ].indexOf(this.cover_set_stats.indexOf(incomplete))
+        ] = this.cover_set_stats.indexOf(complete)
+
+    }
+
+    // function which sees schedule numbers and prepares cover_sets: to be run after mutation
+    // adaptive crossover
+    // growing and evolutionary
 }
 

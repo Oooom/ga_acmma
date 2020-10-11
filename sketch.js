@@ -1,5 +1,6 @@
 var sensors = []
 var lifetime_redundant_sensors = []
+var SENSORS_IN_CRITICAL_FIELD = []
 
 function setup(){
     createCanvas(window.innerWidth, window.innerHeight)
@@ -46,4 +47,15 @@ function generateRandomSensors(){
     for (var i = 0; i < N; i++) {
         sensors.push(createRandomSensor())
     }
+
+    //setup for finding critical sensors
+    var keys_in_cf = Object.keys(COVER_FIELDS)
+    var min_record = Math.min( ...keys_in_cf.map((key) => COVER_FIELDS[key].length  ) )
+    var best = keys_in_cf.filter( (key)=>COVER_FIELDS[key].length == min_record )
+
+    SENSORS_IN_CRITICAL_FIELD = []
+    for(var idx of best){
+        SENSORS_IN_CRITICAL_FIELD.push( { cell_id: idx, sensors: COVER_FIELDS[idx]} )
+    }
+    COVER_FIELDS = {}
 }
