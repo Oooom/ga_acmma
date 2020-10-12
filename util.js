@@ -3,7 +3,7 @@ var DEFAULT_AOI_FILL_COLOR = 'rgba(255, 0, 0, 0.2)'
 var DEFAULT_SENSOR_COLOR   = 'rgba(0, 0, 0, 1)'
 
 
-var N  = 100 // total sensors in field
+var N  = 200 // total sensors in field
 
 var R  = 100  // uniform circular sensing range in pixels : RADIUS
 
@@ -11,10 +11,10 @@ var GS = 10  // uniform circular sensing range in pixels
 
 var M  = 50
 
-var GROWING_MUTATION_RATE  = 0.05
-var CRITICAL_MUTATION_RATE = 0.05
+var GROWING_MUTATION_RATE  = 0.01
+var CRITICAL_MUTATION_RATE = 0.01
 var RETROGRADE_MUTATION_RATE  = 0.01
-var EVOLUTIONARY_MUTATION_RATE  = 0.08
+var EVOLUTIONARY_MUTATION_RATE  = 0.01
 
 var BATTERY_LIFE = {
     min: 50,
