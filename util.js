@@ -13,8 +13,8 @@ var M  = 50
 
 var GROWING_MUTATION_RATE  = 0.05
 var CRITICAL_MUTATION_RATE = 0.05
-var RETROGRADE_MUTATION_RATE  = 0.05
-var EVOLUTIONARY_MUTATION_RATE  = 0.05
+var RETROGRADE_MUTATION_RATE  = 0.01
+var EVOLUTIONARY_MUTATION_RATE  = 0.08
 
 var BATTERY_LIFE = {
     min: 50,
@@ -165,7 +165,9 @@ function Chromosome(isBlank){
         var total_grid_cells = (width / GS) * (height / GS)
 
 
-        for(var i = 0; i < this.cover_set_stats.length; i++){
+        for(var i in this.cover_set_stats){
+            i = parseInt(i)
+
             var sensors_in_this_cover_set = this.cover_set_stats[i].cover_set
             var index = getMinLifetimeWalaSensor( sensors_in_this_cover_set )
             
@@ -211,14 +213,16 @@ function Chromosome(isBlank){
     }
 
     this.calculateFitness = function(){
-        var w1 = 0.7
-        var w2 = 0.3
+        var w1 = 0.8
+        var w2 = 0.2
 
-        var lifetime_upper_limit = N * BATTERY_LIFE.max        
+        var lifetime_upper_limit = N * BATTERY_LIFE.max
         var lifetime = 0
         var coverage = 0
 
-        for(var cover_set of this.cover_set_stats){
+        for(var cover_set_idx in this.cover_set_stats){
+            var cover_set = this.cover_set_stats[ parseInt(cover_set_idx) ]
+
             lifetime += cover_set.lifetime
             coverage += cover_set.coverage
         }
@@ -243,12 +247,16 @@ function Chromosome(isBlank){
 
     this.getRandomIncompleteCoverSet = function(to_ignore){
         // coverage full naa ho and ignore naa karna ho to hi incomplete mein daalo
+        to_ignore = to_ignore ? to_ignore : []
+        
         var incomplete = this.cover_set_stats.filter( (set) => (set.coverage < 1) && !(to_ignore.includes(this.cover_set_stats.indexOf(set) )) )
         
         return incomplete[ getRandomInt(0, incomplete.length-1) ]
     }
 
     this.getRandomCompleteCoverSet = function (to_ignore) {
+        to_ignore = to_ignore ? to_ignore : []
+
         var incomplete = this.cover_set_stats.filter((set) => (set.coverage == 1) && !(to_ignore.includes(this.cover_set_stats.indexOf(set))) )
 
         return incomplete[getRandomInt(0, incomplete.length - 1)]
@@ -263,14 +271,20 @@ function Chromosome(isBlank){
 
             if (r >= GROWING_MUTATION_RATE) continue
 
+            console.log("grow mutation")
+
             var add_or_change = Math.random()
 
-            if(add_or_change < 0.1){
+            if(add_or_change < 0.01){
                 this.schedule_numbers[sensor_id].push( this.cover_set_stats.length )
             }else{
                 var incomplete = this.getRandomIncompleteCoverSet( this.schedule_numbers[sensor_id] )
 
-                this.schedule_numbers[
+                if(incomplete == undefined){
+                    continue
+                }
+
+                this.schedule_numbers[sensor_id][
                     getRandomInt(0, this.schedule_numbers[sensor_id].length - 1)
                 ] = this.cover_set_stats.indexOf(incomplete)
             }
@@ -280,13 +294,16 @@ function Chromosome(isBlank){
 
     this.applyEvolutionaryMutation = function(){
         //cover set wise iterate
-        for (var cover_set_id = 0; cover_set_id < this.cover_set_stats.length; cover_set_id++) {
+        for (var cover_set_id in this.cover_set_stats) {
+            cover_set_id = parseInt( cover_set_id )
 
             if(this.cover_set_stats[cover_set_id].coverage < 1) continue
 
             var r = Math.random()
 
             if (r >= EVOLUTIONARY_MUTATION_RATE) continue
+
+            console.log("evol mutation")
 
             var fields_covered = []
 
@@ -302,7 +319,7 @@ function Chromosome(isBlank){
                 if (sensor.covers_cells.filter((cell_id) => fields_covered.includes(cell_id)).length == sensor.covers_cells.length){
                     redundants.push( sensor )
                 }else{
-                    fields_covered.push( ...sensors[sensor_id].covers_cells )
+                    fields_covered.push( ...sensor.covers_cells )
                 }
             }
 
@@ -310,6 +327,10 @@ function Chromosome(isBlank){
             var redundant_id = sensors.indexOf( redundants[getRandomInt(0, redundants.length - 1)] )
 
             var incomplete = this.getRandomIncompleteCoverSet()
+
+            if (incomplete == undefined) {
+                continue
+            }
 
             this.schedule_numbers[redundant_id][
                 this.schedule_numbers[redundant_id].indexOf( cover_set_id )
@@ -323,7 +344,13 @@ function Chromosome(isBlank){
 
         if( r >= CRITICAL_MUTATION_RATE ) return
         
+        console.log("critical mutation")
+
         var incomplete_set = this.getRandomIncompleteCoverSet()
+
+        if (incomplete_set == undefined) {
+            return
+        }
 
         var fields_covered = []
 
@@ -339,6 +366,10 @@ function Chromosome(isBlank){
             } else {
 
                 var complete = this.getRandomCompleteCoverSet()
+
+                if (complete == undefined) {
+                    continue
+                }
 
                 var intersect = SENSORS_IN_CRITICAL_FIELD[idx].sensors.filter(value => complete.cover_set.includes(value))
 
@@ -359,11 +390,25 @@ function Chromosome(isBlank){
 
         if (r >= RETROGRADE_MUTATION_RATE ) return
 
+        console.log( "retrograde mutation" )
+
         var incomplete = this.getRandomIncompleteCoverSet()
+
+        if (incomplete == undefined) {
+            return
+        }
 
         var complete = this.getRandomCompleteCoverSet()
 
+        if (complete == undefined) {
+            return
+        }
+
+
+
         var diff = incomplete.cover_set.filter(value => !complete.cover_set.includes(value))
+
+        if(diff.length == 0) return
 
         // random_incomplete_sensor_which_not_in_complete
         var sensor = diff[ getRandomInt(0, diff.length - 1) ]
@@ -371,7 +416,6 @@ function Chromosome(isBlank){
         this.schedule_numbers[ sensor ][
             this.schedule_numbers[ sensor ].indexOf(this.cover_set_stats.indexOf(incomplete))
         ] = this.cover_set_stats.indexOf(complete)
-
     }
 
 }

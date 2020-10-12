@@ -1,11 +1,16 @@
-var MATING_POOL = []
 var POPULATION  = []
 
 function generate(){
-    
+
+    var new_population = []
+
+    var sum = 0
+    var max = 0
+    var min = 1
+
     for(var i = 0; i < M; i++){
-        var parentA = MATING_POOL[ getRandomInt(0, MATING_POOL.length - 1) ]
-        var parentB = MATING_POOL[ getRandomInt(0, MATING_POOL.length - 1) ]
+        var parentA = POPULATION[ getRandomInt(0, POPULATION.length - 1) ]
+        var parentB = POPULATION[ getRandomInt(0, POPULATION.length - 1) ]
         
         var blank_child = new Chromosome(true)
 
@@ -28,9 +33,24 @@ function generate(){
         blank_child.refreshLifetimeAndCoverage()
         
         blank_child.calculateFitness()
-        
+     
+        new_population.push(blank_child)
+
+        sum += blank_child.fitness
+
+        if (blank_child.fitness > max){
+            max = blank_child.fitness
+        }
+        if (blank_child.fitness < min){
+            min = blank_child.fitness
+        }
+
     }
 
+    POPULATION = new_population
+    console.warn("AVG: "+ sum/M)
+    console.warn("MAX: "+ max)
+    console.warn("MIN: "+ min)
 }
 
 

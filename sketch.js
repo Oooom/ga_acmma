@@ -65,5 +65,7 @@ function generateRandomSensors(){
     INIT_SOLN.prepareCoverSetStats()
     INIT_SOLN.calculateFitness()
 
-    MATING_POOL.push(INIT_SOLN)
+    POPULATION.push(INIT_SOLN)
+
+    console.warn("INIT SOLN " + INIT_SOLN.fitness)
 }
