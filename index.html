@@ -30,6 +30,7 @@
     <script src="util.js"></script>
     <script src="p5.min.js"></script>
     <script src="sketch.js"></script>
+    <script src="ga.js"></script>
 </head>
 
 <body>
@@ -45,6 +46,10 @@
         <div class="input_wrapper">
             <b><label style="padding-right: 5">Grid Size</label></b>
             <input type="number" style="padding: 2" min="1" id="gs_ip" />
+        </div>
+        <div class="input_wrapper">
+            <b><label style="padding-right: 5">Pop Size (M)</label></b>
+            <input type="number" style="padding: 2" min="1" id="m_ip" />
         </div>
         <br>
         <div class="input_wrapper">
@@ -96,6 +101,7 @@
         n_ip.value  = N
         r_ip.value  = R
         gs_ip.value = GS
+        m_ip.value  = M
 
         battery_min_ip.value = BATTERY_LIFE.min
         battery_max_ip.value = BATTERY_LIFE.max
@@ -114,6 +120,9 @@
         })
         gs_ip.addEventListener("change", function(){
             GS = parseInt(gs_ip.value)
+        })
+        m_ip.addEventListener("change", function(){
+            M = parseInt(m_ip.value)
         })
         
         battery_min_ip.addEventListener("change", function(){

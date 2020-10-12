@@ -5,13 +5,16 @@ var DEFAULT_SENSOR_COLOR   = 'rgba(0, 0, 0, 1)'
 
 var N  = 100 // total sensors in field
 
-var R  = 20  // uniform circular sensing range in pixels : RADIUS
+var R  = 100  // uniform circular sensing range in pixels : RADIUS
 
 var GS = 10  // uniform circular sensing range in pixels
+
+var M  = 50
 
 var GROWING_MUTATION_RATE  = 0.05
 var CRITICAL_MUTATION_RATE = 0.05
 var RETROGRADE_MUTATION_RATE  = 0.05
+var EVOLUTIONARY_MUTATION_RATE  = 0.05
 
 var BATTERY_LIFE = {
     min: 50,
@@ -24,7 +27,7 @@ var BOUNDS = {
         y: 200
     },
     bottomRight: {
-        x: 1200,
+        x: 600,
         y: 600
     }
 }
@@ -108,18 +111,49 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
 }
 
-function Chromosome(){
+function Chromosome(isBlank){
     this.schedule_numbers = []
-    this.cover_set_stats  = [{
-        cover_set                  : [],
-        lifetime                   : 0,
-        coverage                   : 0,
-    }]
+    this.remaining_lifetime_o_sensors = []
+
+    if (isBlank){
+        this.cover_set_stats = []
+    }else{
+        this.cover_set_stats  = [{
+            cover_set                  : [],
+            lifetime                   : 0,
+            coverage                   : 0,
+        }]
+    }
+
     this.fitness = null
 
-    for(var i = 0; i < N; i++){
-        this.schedule_numbers.push([0])
-        this.cover_set_stats[0].cover_set.push(i)
+    if(!isBlank){
+        for(var i = 0; i < N; i++){
+            this.schedule_numbers.push([0])
+            this.cover_set_stats[0].cover_set.push(i)
+        }
+    }
+
+    this.setupCoverSetsFromScheduleNumbers = function () {
+
+        for (var sensor_id in this.schedule_numbers) {
+            sensor_id = parseInt( sensor_id )
+
+            for (var sched_no of this.schedule_numbers[ sensor_id ]) {
+
+                if (this.cover_set_stats[sched_no]) {
+                    this.cover_set_stats[sched_no].cover_set.push( sensor_id )
+                } else {
+                    this.cover_set_stats[sched_no] = {
+                        cover_set: [ sensor_id ],
+                        lifetime: 0,
+                        coverage: 0
+                    }
+                }
+
+            }
+        }
+
     }
 
     this.prepareCoverSetStats = function(){ 
@@ -158,7 +192,7 @@ function Chromosome(){
             })
             this.cover_set_stats[i].coverage = cells_covered_by_this_cover_set.length / total_grid_cells
 
-            lifetime_redundant_sensors = lifetime_o_sensors.splice()
+            this.remaining_lifetime_o_sensors = lifetime_o_sensors
         }    
 
         function getMinLifetimeWalaSensor(sensors_in_this_cover_set){
@@ -194,46 +228,94 @@ function Chromosome(){
 
     this.applyMutation = function(){
 
-        for (var i = 0; i < this.cover_set_stats.length; i++) {
-            var sensors_in_this_cover_set = this.cover_set_stats[i].cover_set
-            var this_cover_set_stat       = this.cover_set_stats[i]
-
-            for (var j = 0; j < sensors_in_this_cover_set.length; j++) {
-                var sensor = sensors_in_this_cover_set[j]
-                
-                // APPLY GROWING MUTATION
-                if (sensors[sensor].battery_life > this_cover_set_stat.lifetime) { //check if this sensor is lifetime redundant
-
-                    //try to trigger GROWING MUTATION
-                    if (Math.random() < GROWING_MUTATION_RATE){
-                        console.log( this.schedule_numbers[ sensor ] )
-                    }
-
-                }
-
-                // APPLY EVOL MUTATION
-
-                // APPLY RETROGRADE MUTATION
-
-                // APPLY CRITICAL MUTATION
-            }
-
-        }
-
+        this.applyGrowingMutation()
+        this.applyEvolutionaryMutation()
         this.applyCriticalMutation()
         this.applyRetrogradeMutation()
+        
     }
 
-    this.getRandomIncompleteCoverSet = function(){
-        var incomplete = this.cover_set_stats.filter( (set) => set.coverage < 1 )
+    this.refreshLifetimeAndCoverage = function () {
+        this.setupCoverSetsFromScheduleNumbers()
+
+        this.prepareCoverSetStats()
+    }
+
+    this.getRandomIncompleteCoverSet = function(to_ignore){
+        // coverage full naa ho and ignore naa karna ho to hi incomplete mein daalo
+        var incomplete = this.cover_set_stats.filter( (set) => (set.coverage < 1) && !(to_ignore.includes(this.cover_set_stats.indexOf(set) )) )
         
         return incomplete[ getRandomInt(0, incomplete.length-1) ]
     }
 
-    this.getRandomCompleteCoverSet = function () {
-        var incomplete = this.cover_set_stats.filter((set) => set.coverage == 1)
+    this.getRandomCompleteCoverSet = function (to_ignore) {
+        var incomplete = this.cover_set_stats.filter((set) => (set.coverage == 1) && !(to_ignore.includes(this.cover_set_stats.indexOf(set))) )
 
         return incomplete[getRandomInt(0, incomplete.length - 1)]
+    }
+
+    this.applyGrowingMutation = function(){
+        
+        for (var sensor_id = 0; sensor_id < N; sensor_id++){
+            if(this.remaining_lifetime_o_sensors[sensor_id] <= 0) continue
+            
+            var r = Math.random()
+
+            if (r >= GROWING_MUTATION_RATE) continue
+
+            var add_or_change = Math.random()
+
+            if(add_or_change < 0.1){
+                this.schedule_numbers[sensor_id].push( this.cover_set_stats.length )
+            }else{
+                var incomplete = this.getRandomIncompleteCoverSet( this.schedule_numbers[sensor_id] )
+
+                this.schedule_numbers[
+                    getRandomInt(0, this.schedule_numbers[sensor_id].length - 1)
+                ] = this.cover_set_stats.indexOf(incomplete)
+            }
+        }
+
+    }
+
+    this.applyEvolutionaryMutation = function(){
+        //cover set wise iterate
+        for (var cover_set_id = 0; cover_set_id < this.cover_set_stats.length; cover_set_id++) {
+
+            if(this.cover_set_stats[cover_set_id].coverage < 1) continue
+
+            var r = Math.random()
+
+            if (r >= EVOLUTIONARY_MUTATION_RATE) continue
+
+            var fields_covered = []
+
+            var sensor_data = sensors.filter((sensor, idx) => this.cover_set_stats[cover_set_id].cover_set.includes(idx) )
+
+            sensor_data.sort( (a, b)=>{
+                return a.covers_cells.length > b.covers_cells.length
+            })
+
+            var redundants = []
+
+            for (var sensor of sensor_data){
+                if (sensor.covers_cells.filter((cell_id) => fields_covered.includes(cell_id)).length == sensor.covers_cells.length){
+                    redundants.push( sensor )
+                }else{
+                    fields_covered.push( ...sensors[sensor_id].covers_cells )
+                }
+            }
+
+
+            var redundant_id = sensors.indexOf( redundants[getRandomInt(0, redundants.length - 1)] )
+
+            var incomplete = this.getRandomIncompleteCoverSet()
+
+            this.schedule_numbers[redundant_id][
+                this.schedule_numbers[redundant_id].indexOf( cover_set_id )
+            ] = this.cover_set_stats.indexOf(incomplete)
+        }
+
     }
 
     this.applyCriticalMutation = function(){
@@ -250,6 +332,7 @@ function Chromosome(){
         }
 
         for (var idx in SENSORS_IN_CRITICAL_FIELD) {
+            idx = parseInt(idx)
 
             if (SENSORS_IN_CRITICAL_FIELD[idx].cell_id in fields_covered) {
 
@@ -257,18 +340,15 @@ function Chromosome(){
 
                 var complete = this.getRandomCompleteCoverSet()
 
-                for (var iter of SENSORS_IN_CRITICAL_FIELD) {
+                var intersect = SENSORS_IN_CRITICAL_FIELD[idx].sensors.filter(value => complete.cover_set.includes(value))
 
-                    var intersect = iter.sensors.filter(value => complete.cover_set.includes(value))
-
-                    if (intersect.length > 1) {
-                        this.schedule_numbers[intersect[0]][
-                            this.schedule_numbers[intersect[0]].indexOf(this.cover_set_stats.indexOf(complete))
-                        ] = this.cover_set_stats.indexOf(incomplete_set)
-                    }
-
+                if (intersect.length > 1) {
+                    this.schedule_numbers[intersect[0]][
+                        this.schedule_numbers[intersect[0]].indexOf(this.cover_set_stats.indexOf(complete))
+                    ] = this.cover_set_stats.indexOf(incomplete_set)
                 }
 
+                break
             }
 
         }
@@ -294,8 +374,5 @@ function Chromosome(){
 
     }
 
-    // function which sees schedule numbers and prepares cover_sets: to be run after mutation
-    // adaptive crossover
-    // growing and evolutionary
 }
 

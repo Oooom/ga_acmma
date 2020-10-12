@@ -2,6 +2,8 @@ var sensors = []
 var lifetime_redundant_sensors = []
 var SENSORS_IN_CRITICAL_FIELD = []
 
+var INIT_SOLN = null
+
 function setup(){
     createCanvas(window.innerWidth, window.innerHeight)
     
@@ -58,4 +60,10 @@ function generateRandomSensors(){
         SENSORS_IN_CRITICAL_FIELD.push( { cell_id: idx, sensors: COVER_FIELDS[idx]} )
     }
     COVER_FIELDS = {}
+
+    INIT_SOLN = new Chromosome(false)
+    INIT_SOLN.prepareCoverSetStats()
+    INIT_SOLN.calculateFitness()
+
+    MATING_POOL.push(INIT_SOLN)
 }
